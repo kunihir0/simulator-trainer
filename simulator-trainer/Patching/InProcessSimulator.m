@@ -13,10 +13,8 @@
 #import "InProcessSimulator.h"
 #import "AppBinaryPatcher.h"
 #import "dylib_conversion.h"
-#import "CycriptLauncher.h"
 #import "CommandRunner.h"
 #import "SimLogging.h"
-#import "ObjseeTraceLauncher.h"
 
 @interface InProcessSimulator ()
 @property (nonatomic, strong) BootedSimulatorWrapper *focusedSimulatorDevice;
@@ -295,19 +293,7 @@
     NSMenuItem *placeholder1 = [[NSMenuItem alloc] initWithTitle:@"Open GUI" action:@selector(handleOpenSimForgeGui:) keyEquivalent:@""];
     [placeholder1 setTarget:self];
 
-    NSMenuItem *placeholder2 = [[NSMenuItem alloc] initWithTitle:@"Cycript Terminal" action:@selector(handleOpenCycript:) keyEquivalent:@""];
-    [placeholder2 setTarget:self];
-    
-    NSMenuItem *traceItem = [[NSMenuItem alloc] initWithTitle:@"objc_msgSend trace" action:@selector(handleObjcMsgSendTrace:) keyEquivalent:@""];
-    [traceItem setTarget:self];
-    
-    NSMenuItem *flexItem = [[NSMenuItem alloc] initWithTitle:@"FLEX" action:@selector(handleObjcMsgSendTrace:) keyEquivalent:@""];
-    [flexItem setTarget:self];
-    
     [simHacksMenu addItem:placeholder1];
-    [simHacksMenu addItem:placeholder2];
-    [simHacksMenu addItem:traceItem];
-    [simHacksMenu addItem:flexItem];
 
     NSMenuItem *simHacksMenuItem = [[NSMenuItem alloc] initWithTitle:@"Sim Hacks" action:nil keyEquivalent:@""];
     [simHacksMenuItem setSubmenu:simHacksMenu];
@@ -316,88 +302,6 @@
 
 - (void)handleOpenSimForgeGui:(id)sender {
     [[NSNotificationCenter defaultCenter] postNotificationName:@"SimForgeShowMainWindow" object:nil];
-}
-    
-- (void)handleOpenCycript:(id)sender {
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:@"Cycript"];
-    [alert setInformativeText:@"Specify bundle ID to launch with Cycript"];
-    [alert addButtonWithTitle:@"Start"];
-    [alert addButtonWithTitle:@"Cancel"];
-    
-    NSTextField *bundleIdField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 250, 24)];
-    [bundleIdField setPlaceholderString:@"bundle ID"];
-    
-    NSTextField *processNameField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 250, 24)];
-    [processNameField setPlaceholderString:@"process name"];
-
-    NSStackView *inputStack = [[NSStackView alloc] initWithFrame:NSMakeRect(0, 0, 250, 30 * 2)];
-    [inputStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
-    [inputStack setSpacing:8];
-    [inputStack addView:bundleIdField inGravity:NSStackViewGravityTop];
-    [inputStack addView:processNameField inGravity:NSStackViewGravityTop];
-
-    [alert setAccessoryView:inputStack];
-
-    [alert beginSheetModalForWindow:[NSApp mainWindow] completionHandler:^(NSModalResponse returnCode) {
-        if (returnCode == NSAlertFirstButtonReturn) {
-            
-            CycriptLaunchRequest *request = [[CycriptLaunchRequest alloc] init];
-            request.targetBundleId = [bundleIdField stringValue];
-            request.processName = [processNameField stringValue];
-            request.targetDeviceId = self.focusedSimulatorDevice.udidString;
-            
-            CycriptLauncher *launcher = [[CycriptLauncher alloc] initWithRequest:request];
-            [launcher launch];
-        }
-    }];
-}
-
-- (void)handleObjcMsgSendTrace:(id)sender {
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:@"objc_msgSend Trace"];
-    [alert setInformativeText:@"Specify class/method pattern and process to trace"];
-    [alert addButtonWithTitle:@"Start Trace"];
-    [alert addButtonWithTitle:@"Cancel"];
-
-    NSTextField *classPatternField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 250, 24)];
-    [classPatternField setPlaceholderString:@"class (default: *)"];
-
-    NSTextField *methodPatternField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 250, 24)];
-    [methodPatternField setPlaceholderString:@"method (default: *)"];
-    
-    NSTextField *bundleIdField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 250, 24)];
-    [bundleIdField setPlaceholderString:@"bundle ID"];
-
-    NSStackView *inputStack = [[NSStackView alloc] initWithFrame:NSMakeRect(0, 0, 250, 30 * 3)];
-    [inputStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
-    [inputStack setSpacing:8];
-    [inputStack addView:classPatternField inGravity:NSStackViewGravityTop];
-    [inputStack addView:methodPatternField inGravity:NSStackViewGravityTop];
-    [inputStack addView:bundleIdField inGravity:NSStackViewGravityTop];
-
-    [alert setAccessoryView:inputStack];
-
-    [alert beginSheetModalForWindow:[NSApp mainWindow] completionHandler:^(NSModalResponse returnCode) {
-        if (returnCode == NSAlertFirstButtonReturn) {
-            NSString *classPattern = [classPatternField stringValue];
-            NSString *methodPattern = [methodPatternField stringValue];
-            
-            ObjseeTraceRequest *request = [[ObjseeTraceRequest alloc] init];
-            if (classPattern && classPattern.length > 0) {
-                request.classPatterns = @[classPattern];
-            }
-            if (methodPattern && methodPattern.length > 0) {
-                request.methodPatterns = @[methodPattern];
-            }
-            
-            request.targetBundleId = [bundleIdField stringValue];
-            request.targetDeviceId = self.focusedSimulatorDevice.udidString;
-            
-            ObjseeTraceLauncher *traceLauncher = [[ObjseeTraceLauncher alloc] initWithTraceRequest:request];
-            [traceLauncher launch];
-        }
-    }];
 }
 
 - (void)focusSimulatorDevice:(BootedSimulatorWrapper *)device {

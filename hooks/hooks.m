@@ -10,7 +10,7 @@
 #import "dyld-interposing.h"
 
 
-extern BOOL os_log_type_enabled(os_log_t oslog, os_log_type_t type);
+//extern BOOL os_log_type_enabled(os_log_t oslog, os_log_type_t type);
 BOOL new_os_log_type_enabled(os_log_t oslog, os_log_type_t type) {
     if (oslog == NULL) {
         return NO;
